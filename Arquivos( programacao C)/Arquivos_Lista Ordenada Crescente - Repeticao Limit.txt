@@ -1,0 +1,457 @@
+#include <stdio.h>
+#include <stdlib.h>
+
+void Iniciar (int *elementos)
+{
+	FILE *arq1;
+	
+	arq1=fopen("dados.txt", "r+");
+	if (!arq1)
+	{
+		arq1=fopen("dados.txt", "w+");
+		if (!arq1)
+		{
+			printf ("Erro na abertura do arquivo!\n");
+			system ("pause");
+		}
+		else
+		{
+			fprintf (arq1, "%d", 0);
+		}
+	}
+	rewind (arq1);
+	fscanf (arq1, "%d", elementos);
+	fclose (arq1);
+	
+	if (*elementos==0)
+	{
+		arq1=fopen("principal.txt", "w+");
+		if (!arq1)
+		{
+			printf ("Erro na abertura do arquivo!\n");
+			system ("pause");
+		}
+		fclose (arq1);
+	}
+}
+
+int Menu ()
+{
+	int menu;
+
+	printf ("MENU DE OPCOES\n\n");
+	printf ("(1)Inserir\n(2)Remover\n(3)Alterar\n(4)Buscar\n(5)Exibir\n(6)Destruir\n(7)Sair\n");
+	printf ("\nEscolha uma opcao: ");
+	scanf ("%d", &menu);
+	return menu;
+}
+
+void CopiarArquivo ()
+{ 
+	int numero;
+	FILE *arq1, *arq2;
+	
+	arq1=fopen ("principal.txt","w+");
+	arq2=fopen ("temporario.txt","r+");
+	if ((!arq1) || (!arq2))
+	{
+		printf ("Erro na abertura do arquivo!\n");
+		system ("pause");
+	}  
+	while (!feof(arq2))
+	{
+		fscanf (arq2, "%d\n", &numero);
+		fprintf (arq1, "%d\n", numero);
+	}
+	fclose (arq1);
+	fclose (arq2);		
+}
+
+int OrdenaArquivo (int numero, int *elementos)
+{
+	int numeroArq, ctrl=1;
+	FILE *arq1, *arq2;
+	
+	arq1=fopen ("principal.txt", "r+");
+	arq2=fopen ("temporario.txt", "w+");
+	if ((!arq1) || (!arq2))
+	{
+		printf ("Erro na abertura do arquivo!\n");
+		system ("pause");
+	}
+	
+	if (*elementos==0)
+	{
+		fprintf (arq1, "%d\n", numero);
+		fclose (arq1);
+		fclose (arq2);
+		*elementos=*elementos+1;
+		return 1;	
+	}
+	else
+	{
+		while (!feof(arq1))
+		{
+			fscanf (arq1, "%d\n", &numeroArq);
+			if (numeroArq<numero)
+			{
+				fprintf (arq2,"%d\n", numeroArq);
+			}
+			else
+			{
+				fprintf (arq2,"%d\n", numero);
+				ctrl=0;
+				break;
+			}
+		}
+		if (ctrl==1)
+		{
+			fprintf (arq2,"%d\n", numero);
+		}
+		else
+		{
+			fprintf (arq2,"%d\n", numeroArq);
+			while (!feof(arq1))
+			{
+				fscanf (arq1, "%d\n", &numeroArq);
+				fprintf (arq2,"%d\n", numeroArq);
+			}
+		}
+		fclose (arq1);
+		fclose (arq2);
+		CopiarArquivo ();
+	}
+	*elementos=*elementos+1;
+	return 1;	
+}
+
+int ChecaLimite (int numero, int *ocorrencias)
+{
+	int numeroArq;
+	FILE* arq1;
+	*ocorrencias=0;
+	
+	arq1=fopen("principal.txt", "r+");
+	if (!arq1)
+	{
+		printf ("Erro na abertura do arquivo!\n");
+		system ("pause");
+	}
+	
+	while (!feof(arq1))
+	{
+		fscanf (arq1, "%d\n", &numeroArq);
+		if (numero==numeroArq)
+		{
+			*ocorrencias=*ocorrencias+1;
+			if (*ocorrencias>=numero)
+			{
+				fclose (arq1);
+				return 0;
+			}
+		}
+	}
+	fclose (arq1);
+	return 1;
+}
+
+void RemoverElemento (int numero, int *elementos, int *remocoes)
+{
+	int numeroArq;
+	FILE *arq1, *arq2;
+	*remocoes=0;
+	
+	arq1=fopen ("principal.txt", "r+");
+	arq2=fopen ("temporario.txt", "w+");
+	if ((!arq1) || (!arq2))
+	{
+		printf ("Erro na abertura do arquivo!\n");
+		system ("pause");
+	}
+	
+	while (!feof(arq1))
+	{
+		fscanf (arq1, "%d\n", &numeroArq);
+		if (numero==numeroArq)
+		{
+			*remocoes=1;
+			break;
+		}
+		else
+		{
+			fprintf (arq2, "%d\n", numeroArq);
+		}
+	}
+	while (!feof(arq1))
+	{
+		fscanf (arq1, "%d\n", &numeroArq);
+		fprintf (arq2, "%d\n", numeroArq);
+	}
+	fclose (arq1);
+	fclose (arq2);
+	*elementos=*elementos-*remocoes;
+	CopiarArquivo (arq1, arq2);
+}
+
+int ArlterarElemento (int numero, int numeroNovo, int repeticoes, int *elementos, int *ocorrencias)
+{
+	int limite, ctrl, cont=0;
+	FILE *arq1;
+	
+	if (repeticoes<(numeroNovo-*ocorrencias))
+	{
+		limite=repeticoes;
+	}
+	else
+	{
+		limite=numeroNovo-*ocorrencias;
+	}
+	
+	if (limite<*elementos)
+	{
+		while (cont<limite)
+		{
+			RemoverElemento (numero, elementos, ocorrencias);
+			cont++;
+		}
+		cont=0;
+		while (cont<limite)
+		{
+			OrdenaArquivo (numeroNovo, elementos);
+			cont++;
+		}
+		ctrl=1;
+		return ctrl;
+	}
+	else
+	{
+		arq1=fopen ("principal.txt", "w+");
+		if (!arq1)
+		{
+			printf ("Erro na abertura do arquivo!\n");
+			system ("pause");
+		}
+		fclose (arq1);
+		*elementos=0;
+		
+		cont=0;
+		while (cont<limite)
+		{
+			OrdenaArquivo (numeroNovo, elementos);
+			cont++;
+			*elementos=*elementos+1;
+		}
+	}
+	ctrl=1;
+	return ctrl;	
+}
+
+void Buscar (int *ocorrencias, int numero)
+{
+	int ctrl;
+	
+	
+	ctrl=ChecaLimite (numero, ocorrencias);
+}
+
+void Exibir (int *elementos)
+{
+	int numero;
+	FILE *arq1;
+	
+	printf ("Arquivo:\n");
+	printf ("######\n");
+	if(*elementos==0)
+	{
+		printf ("Vazio!\n");
+	}
+	else
+	{
+		arq1=fopen ("principal.txt", "r+");
+		if (!arq1)
+		{
+			printf ("Erro na abertura do arquivo!\n");
+			system ("pause");
+		}
+		while (!feof(arq1))
+		{
+			fscanf (arq1, "%d\n", &numero);
+			printf ("%d\n", numero);
+		}
+		fclose (arq1);	
+	}
+	printf ("######\n\n");
+}
+
+int DestruirArq (int *elementos)
+{
+	int ctrl=0;
+	FILE *arq1;
+	arq1 =fopen ("principal.txt", "w+");
+	if (!arq1)
+	{
+		printf ("Erro na abertura do arquivo!\n");
+		system ("pause");
+	}
+	fclose (arq1);
+	*elementos=0;
+	ctrl=1;
+	return ctrl;
+}
+
+void Sair (int *elementos)
+{
+	FILE *arq1;
+	
+	arq1= fopen("dados.txt", "w+");
+	if (!arq1)
+	{
+		printf ("Erro na abertura do arquivo!\n");
+		system ("pause");
+	}
+	fprintf (arq1, "%d", *elementos);
+	fclose (arq1); 
+}
+
+int main ()
+{
+	int menu, numero, numeroNovo, ctrl, repeticoes, elementos, *pElementos=&elementos, cont, *pCont=&cont;
+	
+	Iniciar (pElementos);
+	printf ("Arquivo com %d elemento(s).\n", *pElementos);
+	
+	menu=Menu ();
+	system ("cls");
+	while (menu<=0||menu>=8)
+	{
+		printf ("Opcao invalida!\n");
+		menu=Menu ();
+	}
+	while (menu>0||menu<8)
+	{	
+		if (menu==1)
+		{
+			printf ("Qual numero deseja inserir?");
+			scanf ("%d", &numero);
+			ctrl=ChecaLimite (numero, pCont);
+			while (ctrl==0||numero==0)
+			{
+					printf ("Limite maximo do numero atingido!\n");
+					printf ("Qual numero deseja inserir?");
+					scanf ("%d", &numero);
+					ctrl=ChecaLimite (numero, pCont);
+			}
+			ctrl=OrdenaArquivo (numero, pElementos);
+			if (ctrl==1)
+			{
+				printf ("Numero inserido com sucesso.\n\n");
+			}
+		}
+		if (menu==2)
+		{
+			if (*pElementos>0)
+			{
+				printf ("Qual numero deseja remover?");
+				scanf ("%d", &numero);
+				RemoverElemento (numero, pElementos, pCont);
+				if (*pCont>0)
+				{
+					printf ("O numero foi removido 1 vez.\n\n");
+				}
+				else
+				{
+					printf ("Numero nao encontrado!\n\n");
+				}
+			}
+			else
+			{
+				printf ("Impossivel remover!\n\n");
+			}
+		}
+		if (menu==3)
+		{
+			if (*pElementos>0)
+			{
+				printf ("Qual numero deseja alterar?");
+				scanf ("%d", &numero);
+				ctrl=ChecaLimite (numero, pCont);
+				repeticoes=cont;
+				while (repeticoes==0)
+				{
+					printf ("Numero inexistente!\n");
+					printf ("Qual numero deseja alterar?");
+					scanf ("%d", &numero);
+					ctrl=ChecaLimite (numero, pCont);
+					repeticoes=cont;
+				}
+				printf ("Qual numero deseja inserir?");
+				scanf ("%d", &numeroNovo);
+				ctrl=ChecaLimite (numeroNovo, pCont);
+				while (ctrl==0||numeroNovo==0||numeroNovo==numero)
+				{
+					printf ("Numero invalido!\n");
+					printf ("Qual numero deseja inserir?");
+					scanf ("%d", &numeroNovo);
+					ctrl=ChecaLimite (numeroNovo, pCont);
+				}
+				ctrl= ArlterarElemento(numero, numeroNovo, repeticoes, pElementos, pCont);
+				if (ctrl==1)
+				{
+					printf ("Numero alterado com sucesso!\n\n");
+				}
+			}
+			else
+			{
+				printf ("Impossivel alterar!\n\n");	
+			}	
+		}
+		if (menu==4)
+		{   
+			if (*pElementos>0)
+			{
+				printf ("Qual numero deseja buscar?");
+	        	scanf ("%d", &numero);
+				Buscar (pCont,numero);
+				if (*pCont==0)
+					{
+						printf ("Numero nao encontrado!\n\n");
+					}
+					else
+					
+					{
+						printf ("O numero aparece %d vez(es).\n\n", *pCont);
+					}
+			}
+			else
+			{
+				printf ("Impossivel buscar!\n\n");
+			}
+					
+		}
+		if (menu==5)
+		{
+			Exibir (pElementos);
+		}
+		if (menu==6)
+		{
+			ctrl=DestruirArq (pElementos);
+			if (ctrl==1)
+			{
+				printf ("Arquivo Destruido!\n\n");
+			}
+		}
+		if (menu==7)
+		{
+			break;
+		}
+		menu=Menu ();
+		system ("cls");
+		while (menu<=0||menu>=8)
+		{
+			printf ("Opcao invalida!\n");
+			menu=Menu ();
+		}
+	}
+	Sair (pElementos);
+	return 0;
+}
